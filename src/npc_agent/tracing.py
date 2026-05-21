@@ -26,6 +26,7 @@ def log_llm_call(trace: dict, response, latency_ms: int) -> None:
         "prompt_tokens": usage.prompt_tokens if usage else 0,
         "completion_tokens": usage.completion_tokens if usage else 0,
         "has_tool_calls": bool(response.choices[0].message.tool_calls),
+        "thought": response.choices[0].message.content or "",
     })
     trace["total_tokens"] += tokens_used
     trace["total_latency_ms"] += latency_ms

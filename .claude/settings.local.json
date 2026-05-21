@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from src.npc_agent.config import MODEL; print\\('OK, model:', MODEL\\)\")",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(python test_compression.py)",
+      "Bash(set PYTHONUTF8=1)",
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(grep -E \"\\\\.json$|chat_history\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\pycharmproject\\\\anti-fraud-agent\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"D:\\\\pycharmproject\\\\anti-fraud-agent\" -Recurse -Force)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\pycharmproject\\\\anti-fraud-agent\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName })",
+      "Bash(ls -la \"D:\\\\pycharmproject\\\\anti-fraud-agent\\\\\" | grep -E \"^\\\\.\" | head -10)"
+    ]
+  }
+}

@@ -14,10 +14,19 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from npc_agent.config import MODEL  # noqa: E402
-from npc_agent.llm_client import get_client  # noqa: E402
+from openai import OpenAI  # noqa: E402
+from npc_agent.config import get_env  # noqa: E402
 
-JUDGE_MODEL = MODEL  # 用同一个 DeepSeek 模型当 judge；想做更严要换更大模型
+JUDGE_MODEL = "gpt-4o-mini"
+
+_judge_client: OpenAI | None = None
+
+
+def get_judge_client() -> OpenAI:
+    global _judge_client
+    if _judge_client is None:
+        _judge_client = OpenAI(api_key=get_env("OPENAI_API_KEY"))
+    return _judge_client
 
 
 JUDGE_SYSTEM_PROMPT = """你是一个 AI 评估员。下面会给你一段 "用户输入" 和一段 "Agent 回复"，请按 4 个维度各打 1-5 分（整数），并给一句简短评语。
@@ -73,7 +82,7 @@ def llm_judge(case: dict, agent_reply: str) -> dict:
         f"## 期望关键词（参考，不必全中）\n{case.get('expected_keywords', [])}\n"
     )
 
-    client = get_client()
+    client = get_judge_client()
     response = client.chat.completions.create(
         model=JUDGE_MODEL,
         messages=[

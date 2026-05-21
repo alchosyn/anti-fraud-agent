@@ -53,6 +53,9 @@ def step(messages: list[dict], user_input: str) -> tuple[str, list[dict]]:
             reply = clean_reply(msg.content)
             break
 
+        if msg.content:
+            print(f"[Thought] {msg.content}")
+
         messages.append(msg.to_dict())
 
         for tool_call in msg.tool_calls:
