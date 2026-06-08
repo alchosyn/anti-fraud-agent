@@ -32,3 +32,11 @@ data/grpo_train.jsonl
 outputs/
 *.safetensors
 *.bin
+
+# IDE
+.idea/
+
+# Web app runtime artifacts
+backend/db/*.db
+frontend/node_modules/
+frontend/dist/
