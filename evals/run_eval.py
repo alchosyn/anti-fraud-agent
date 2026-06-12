@@ -1,14 +1,14 @@
-"""跑 evals/cases.json 里的所有场景，输出规则匹配评分（可选叠加 LLM-as-judge）。
+"""跑 evals/cases/cases.json 里的所有场景，输出规则匹配评分（可选叠加 LLM-as-judge）。
 
 用法：
     python evals/run_eval.py                # 只跑规则匹配
     python evals/run_eval.py --judge        # 同时跑 LLM-as-judge 并做一致性分析
     python evals/run_eval.py --limit 3      # 只跑前 3 个 case（调试用）
-    python evals/run_eval.py --cases evals/cases_v2.json --out-suffix _v2
+    python evals/run_eval.py --cases evals/cases/cases_v2.json --out-suffix _v2
 
 输出：
-    evals/report{suffix}.md       人类可读报告
-    evals/results{suffix}.json    机器可读完整结果
+    evals/reports/report{suffix}.md       人类可读报告
+    evals/reports/results{suffix}.json    机器可读完整结果
 
 评估一律以 use_long_memory=False / persist=False / temperature=0.0 调用 agent：
 不注入本机私人长期记忆（历史版本曾有此污染）、不写 chat_history/trace 文件、输出求稳定。
@@ -30,7 +30,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "evals"))
 from npc_agent.agent import step  # noqa: E402
 from npc_agent.persona import SYSTEM_PROMPT  # noqa: E402
 
-CASES_PATH = PROJECT_ROOT / "evals" / "cases.json"
+CASES_PATH = PROJECT_ROOT / "evals" / "cases" / "cases.json"
+REPORTS_DIR = PROJECT_ROOT / "evals" / "reports"
 
 # 评估统一的 step() 配置：不注入私人记忆、不落盘、温度 0
 EVAL_STEP_KWARGS = {"use_long_memory": False, "persist": False, "temperature": 0.0}
@@ -129,7 +130,7 @@ def run_one_case(case: dict, step_kwargs: dict | None = None) -> dict:
 def write_report(results: list[dict], with_judge: bool = False, report_path: Path | None = None) -> None:
     """生成 markdown 报告。"""
     if report_path is None:
-        report_path = PROJECT_ROOT / "evals" / "report.md"
+        report_path = REPORTS_DIR / "report.md"
     total = len(results)
     rule_passed = sum(1 for r in results if r["rule_result"]["pass"])
     rule_pass_rate = rule_passed / total if total else 0
@@ -212,8 +213,9 @@ def main() -> None:
     parser.add_argument("--out-suffix", default="", help="输出文件名后缀，如 _v2 → report_v2.md")
     args = parser.parse_args()
 
-    report_path = PROJECT_ROOT / "evals" / f"report{args.out_suffix}.md"
-    results_path = PROJECT_ROOT / "evals" / f"results{args.out_suffix}.json"
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = REPORTS_DIR / f"report{args.out_suffix}.md"
+    results_path = REPORTS_DIR / f"results{args.out_suffix}.json"
 
     cases = load_cases(args.cases)
     if args.limit:

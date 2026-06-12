@@ -1,4 +1,4 @@
-"""scripts/grpo_reward.py 单元测试。
+"""scripts/training/grpo_reward.py 单元测试。
 
 Judge 部分用 mock，避免单测依赖 DEEPSEEK_API_KEY。
 """
@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # 把 scripts/ 加进 path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "training"))
 
 from grpo_reward import batch_compute_reward, compute_reward  # noqa: E402
 from train_grpo import _to_text, _user_text  # noqa: E402

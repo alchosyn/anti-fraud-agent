@@ -191,7 +191,7 @@ def _real_judge(user_input: str, completion: str) -> float:
     global _real_judge_fn
     if _real_judge_fn is None:
         # 把 evals/ 加进 path
-        evals_dir = Path(__file__).resolve().parent.parent / "evals"
+        evals_dir = Path(__file__).resolve().parents[2] / "evals"
         if str(evals_dir) not in sys.path:
             sys.path.insert(0, str(evals_dir))
         from judge import llm_judge  # noqa: E402

@@ -4,7 +4,7 @@
 
 - 2026-06-12，Windows 11 本机，uvicorn 单 worker
 - 存储：SQLite（NullPool）+ 进程内无 Redis（限流关闭 `RATE_LIMIT_DISABLED=1`）
-- 工具：`scripts/bench_api.py`（asyncio + httpx，50 并发，15s/10s）
+- 工具：`scripts/ops/bench_api.py`（asyncio + httpx，50 并发，15s/10s）
 - 该口径偏保守：生产编排（PostgreSQL 连接池 + Redis + Linux）下读路径应更好。
   复现真实栈口径：`docker compose up -d` 后用 locust 跑 `tests/perf/locustfile.py`
 
@@ -45,7 +45,7 @@ bcrypt 的 C 实现会释放 GIL，多核真正并行；事件循环只负责调
    GETDEL 原子一次性消费）——`/api/analyze` 与 WebSocket 可以落在不同
    worker/实例上，uvicorn 多 worker 与多副本部署成为可能。
 2. **分析结果 Redis 缓存**：同一消息重复提交直接回缓存结论，跳过整个
-   agent ReAct 循环（单次约 6.7s P50 / 3k tokens，见 evals/benchmark_report.md
+   agent ReAct 循环（单次约 6.7s P50 / 3k tokens，见 evals/reports/benchmark_report.md
    的 agent 行）→ 缓存命中时为毫秒级 DB+Redis 读。
 3. **WS 推送前先落库**：客户端收到的每条消息都已持久化，断线不丢进度。
 
@@ -54,7 +54,7 @@ bcrypt 的 C 实现会释放 GIL，多核真正并行；事件循环只负责调
 ```powershell
 # 修复前后对比（单端点）
 $env:RATE_LIMIT_DISABLED="1"; uvicorn backend.main:app --port 8765 --log-level error
-python scripts/bench_api.py --endpoint login -c 50 -d 15
+python scripts/ops/bench_api.py --endpoint login -c 50 -d 15
 
 # 混合场景（需 pip install locust）
 locust -f tests/perf/locustfile.py --host http://127.0.0.1:8000 `

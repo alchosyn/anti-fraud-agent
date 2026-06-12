@@ -3,7 +3,7 @@
 主入口，可在任何有 GPU 的环境跑（本地 / 服务器 / Kaggle / Colab）。
 
 用法（默认值已经调好，可直接跑）：
-    python scripts/train_lora.py \\
+    python scripts/training/train_lora.py \\
         --train-jsonl data/sft_train.jsonl \\
         --val-jsonl   data/sft_val.jsonl \\
         --output-dir  outputs/qwen-1.5b-xinzao-lora

@@ -1,25 +1,33 @@
-# Ruff lint 配置（ruff check src backend evals scripts tests）
+# 工具配置统一入口（替代散落的 ruff.toml / pytest.ini）
+
+[tool.ruff]
 target-version = "py312"
 line-length = 110
 exclude = [".venv", "frontend", "notebooks", "outputs", "data"]
 
-[lint]
+[tool.ruff.lint]
 # E/W pycodestyle、F pyflakes、I isort、UP pyupgrade、B bugbear
 select = ["E", "F", "W", "I", "UP", "B"]
 ignore = [
     "E501",   # 长行：中文注释/提示词字符串不强拆
 ]
 
-[lint.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # evals/scripts/tests 需要先 sys.path.insert 再 import 项目内模块
-"evals/*" = ["E402"]
-"scripts/*" = ["E402"]
-"tests/*" = ["E402"]
+"evals/**" = ["E402"]
+"scripts/**" = ["E402"]
+"tests/**" = ["E402"]
 "main.py" = ["E402"]
 "backend/agent/integration.py" = ["E402"]
 # FastAPI 的 Depends() 写在参数默认值里是框架惯用法，B008 属误报
-"backend/api/*" = ["B008"]
+"backend/api/**" = ["B008"]
 "backend/auth.py" = ["B008"]
 
-[lint.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["npc_agent", "backend"]
+
+[tool.pytest.ini_options]
+# 默认只收集后端测试（快、零外部依赖）。
+# 评估侧离线测试单独跑：pytest tests/test_benchmark_public.py（需 sklearn/torch 等重依赖）
+testpaths = ["tests/backend"]
+asyncio_mode = "auto"

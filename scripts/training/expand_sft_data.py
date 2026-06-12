@@ -5,9 +5,9 @@
 原种子也保留进结果，所以 50 × 5 = 250 条。
 
 用法：
-    python scripts/expand_sft_data.py                    # 跑全量
-    python scripts/expand_sft_data.py --variants 3       # 每条扩 3 变体
-    python scripts/expand_sft_data.py --limit 5          # 调试，只扩前 5 条
+    python scripts/training/expand_sft_data.py                    # 跑全量
+    python scripts/training/expand_sft_data.py --variants 3       # 每条扩 3 变体
+    python scripts/training/expand_sft_data.py --limit 5          # 调试，只扩前 5 条
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from npc_agent.config import MODEL  # noqa: E402

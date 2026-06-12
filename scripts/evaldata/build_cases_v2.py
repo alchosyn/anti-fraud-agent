@@ -1,4 +1,4 @@
-"""合并 cases.json(v1) + 评审后的 cases_v2_candidates.json → evals/cases_v2.json。
+"""合并 cases.json(v1) + 评审后的 cases_v2_candidates.json → evals/cases/cases_v2.json。
 
 人工评审的修订全部编码在本文件（可审计、可重放）：
   - legit 硬负例：取消工具调用要求（考内容不考过程——对明显正常的消息，
@@ -9,7 +9,7 @@
   - 个别不可达关键词修正（「老人」「短链」），过时场景（健康码）删除
   - v1 的 15 条 case 原样并入（已被既有报告验证过），补 risk_label/source 字段
 
-用法：python scripts/build_cases_v2.py
+用法：python scripts/evaldata/build_cases_v2.py
 """
 
 from __future__ import annotations
@@ -17,10 +17,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-V1_PATH = PROJECT_ROOT / "evals" / "cases.json"
-CANDIDATES_PATH = PROJECT_ROOT / "evals" / "cases_v2_candidates.json"
-OUT_PATH = PROJECT_ROOT / "evals" / "cases_v2.json"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+V1_PATH = PROJECT_ROOT / "evals" / "cases" / "cases.json"
+CANDIDATES_PATH = PROJECT_ROOT / "evals" / "cases" / "cases_v2_candidates.json"
+OUT_PATH = PROJECT_ROOT / "evals" / "cases" / "cases_v2.json"
 
 # v1 case 的 risk_label 标注（评审判断）
 V1_LABELS = {

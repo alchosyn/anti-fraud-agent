@@ -17,11 +17,11 @@ compression_test_log.txt
 data/traces/
 
 # 评估生成的运行时报告（每次跑会覆盖，不入版本控制）
-evals/report.md
-evals/results.json
-evals/compare_results.json
-# 注意：compare_report.md（5-way 对比）、report_v2.md、benchmark_report.md、
-# ablation_report.md 是评估证据，入版本控制
+evals/reports/report.md
+evals/reports/results.json
+evals/reports/compare_results.json
+# 注意：evals/reports/ 下的 compare_report.md（5-way 对比）、report_v2.md、
+# benchmark_report.md、ablation_report.md 是评估证据，入版本控制
 
 # 公开基准：原始数据缓存（58MB，可由脚本重下）与逐样本运行结果不入库
 data/benchmarks/

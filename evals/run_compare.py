@@ -29,9 +29,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "evals"))
 
-CASES_PATH = PROJECT_ROOT / "evals" / "cases.json"
-REPORT_PATH = PROJECT_ROOT / "evals" / "compare_report.md"
-RESULTS_PATH = PROJECT_ROOT / "evals" / "compare_results.json"
+CASES_PATH = PROJECT_ROOT / "evals" / "cases" / "cases.json"
+REPORT_PATH = PROJECT_ROOT / "evals" / "reports" / "compare_report.md"
+RESULTS_PATH = PROJECT_ROOT / "evals" / "reports" / "compare_results.json"
 
 
 # ─── 策略 1: DeepSeek base (无 RAG，纯 LLM) ─────────────

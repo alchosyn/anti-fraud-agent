@@ -6,8 +6,8 @@
 完整原始文件缓存在 data/benchmarks/（已 gitignore），由本脚本按固定 commit SHA 重新下载。
 
 用法：
-    python scripts/fetch_benchmark_data.py                  # 默认 300/类，其中 50/类 作 dev
-    python scripts/fetch_benchmark_data.py --force          # 强制重新下载原始文件
+    python scripts/evaldata/fetch_benchmark_data.py                  # 默认 300/类，其中 50/类 作 dev
+    python scripts/evaldata/fetch_benchmark_data.py --force          # 强制重新下载原始文件
 
 输出（提交入库，~100KB）：
     evals/data/spam_sample_v1.jsonl       test 集（默认 250/类 × 2 = 500 条）
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import requests
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # 固定到具体 commit，保证可复现（git ls-remote 取得，2026-06-10）
 COMMIT_SHA = "754d3a74c626770a8812b62563ae457832242ea1"

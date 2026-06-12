@@ -15,11 +15,11 @@
     hard_neg      risk_label=legit 子集的 content_pass（误报抵抗力）
 
 用法：
-    python evals/run_ablation.py --cases evals/cases_v2.json --variants full no_tools --limit 3   # 冒烟
-    python evals/run_ablation.py --cases evals/cases_v2.json --judge                              # 全量
+    python evals/run_ablation.py --cases evals/cases/cases_v2.json --variants full no_tools --limit 3   # 冒烟
+    python evals/run_ablation.py --cases evals/cases/cases_v2.json --judge                              # 全量
 
 逐 case 结果写 evals/results/ablation_<variant>.jsonl（断点续跑按 id 跳过）；
-汇总写 evals/ablation_report.md + evals/ablation_metrics.json。
+汇总写 evals/reports/ablation_report.md + evals/reports/ablation_metrics.json。
 """
 
 from __future__ import annotations
@@ -41,8 +41,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "evals"))
 from run_eval import EVAL_STEP_KWARGS, load_cases, run_one_case  # noqa: E402
 
 RESULTS_DIR = PROJECT_ROOT / "evals" / "results"
-REPORT_PATH = PROJECT_ROOT / "evals" / "ablation_report.md"
-METRICS_PATH = PROJECT_ROOT / "evals" / "ablation_metrics.json"
+REPORT_PATH = PROJECT_ROOT / "evals" / "reports" / "ablation_report.md"
+METRICS_PATH = PROJECT_ROOT / "evals" / "reports" / "ablation_metrics.json"
 
 ABLATIONS: dict[str, dict] = {
     "full": {"active_tools": None},
@@ -226,7 +226,9 @@ def write_report(summaries: dict[str, dict], cases_path: Path, with_judge: bool)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="消融实验 runner")
-    parser.add_argument("--cases", type=Path, default=PROJECT_ROOT / "evals" / "cases_v2.json")
+    parser.add_argument(
+        "--cases", type=Path, default=PROJECT_ROOT / "evals" / "cases" / "cases_v2.json"
+    )
     parser.add_argument("--variants", nargs="+", default=DEFAULT_VARIANTS, choices=list(ABLATIONS))
     parser.add_argument("--judge", action="store_true")
     parser.add_argument("--limit", type=int, default=None)

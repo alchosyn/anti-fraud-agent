@@ -1,4 +1,4 @@
-"""把 evals/cases.json 的 15 条 + data/sft_seeds.json 的 50 条合并成 GRPO 训练数据。
+"""把 evals/cases/cases.json 的 15 条 + data/sft_seeds.json 的 50 条合并成 GRPO 训练数据。
 
 输出 data/grpo_train.jsonl，每行是**对话式 prompt**（套 SFT 同款 system 人设，
 TRL GRPOTrainer 会自动 apply chat template）：
@@ -17,7 +17,7 @@ scenario_keywords 仅用于触发 reward 函数里的"紧急-短回复罚"——
 通过 grep 紧急词从 user_input 自动提取。
 
 用法：
-    python scripts/build_grpo_dataset.py
+    python scripts/training/build_grpo_dataset.py
 """
 
 from __future__ import annotations
@@ -32,8 +32,8 @@ for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CASES_PATH = PROJECT_ROOT / "evals" / "cases.json"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CASES_PATH = PROJECT_ROOT / "evals" / "cases" / "cases.json"
 SEEDS_PATH = PROJECT_ROOT / "data" / "sft_seeds.json"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "grpo_train.jsonl"
 

@@ -4,9 +4,9 @@
 locust（tests/perf/locustfile.py）用于混合场景的持续压测。
 
 用法：
-    python scripts/bench_api.py --url http://127.0.0.1:8765 --endpoint healthz -c 50 -d 15
-    python scripts/bench_api.py --endpoint login -c 50 -d 15      # 需先注册 bench 用户
-    python scripts/bench_api.py --endpoint history -c 50 -d 15
+    python scripts/ops/bench_api.py --url http://127.0.0.1:8765 --endpoint healthz -c 50 -d 15
+    python scripts/ops/bench_api.py --endpoint login -c 50 -d 15      # 需先注册 bench 用户
+    python scripts/ops/bench_api.py --endpoint history -c 50 -d 15
 """
 
 from __future__ import annotations

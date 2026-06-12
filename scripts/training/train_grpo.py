@@ -1,7 +1,7 @@
 """GRPO 后训练脚本：从 SFT LoRA adapter 热启动，跑 GRPO 进一步优化。
 
 设计要点：
-- Reward = LLM-as-judge 主体 + 规则项补充（见 scripts/grpo_reward.py）
+- Reward = LLM-as-judge 主体 + 规则项补充（见 scripts/training/grpo_reward.py）
 - Warm-start 从 SFT 训出来的 LoRA adapter（不是 base 模型）
 - 训练数据用 data/grpo_train.jsonl（cases.json + sft_seeds 合并的 65 条 prompt）
 - 兼容 trl 不同版本（用 inspect 探测可用参数）
@@ -9,7 +9,7 @@
 - 需要 DEEPSEEK_API_KEY（reward function 调 judge API）
 
 用法：
-    python scripts/train_grpo.py \\
+    python scripts/training/train_grpo.py \\
         --base-model unsloth/Qwen2.5-1.5B-Instruct \\
         --sft-adapter outputs/qwen-1.5b-xinzao-lora \\
         --train-jsonl data/grpo_train.jsonl \\
@@ -31,7 +31,7 @@ for _s in (sys.stdout, sys.stderr):
 # 路径设置：scripts/ 用于 import grpo_reward；src/ 用于 import npc_agent；
 # evals/ 用于 import judge（reward 函数链路上会用到）
 _SCRIPTS_DIR = Path(__file__).resolve().parent
-_PROJECT_ROOT = _SCRIPTS_DIR.parent
+_PROJECT_ROOT = _SCRIPTS_DIR.parents[1]
 sys.path.insert(0, str(_SCRIPTS_DIR))
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 sys.path.insert(0, str(_PROJECT_ROOT / "evals"))

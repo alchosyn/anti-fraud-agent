@@ -22,7 +22,7 @@ import json
 import random
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPANDED_PATH = PROJECT_ROOT / "data" / "sft_expanded.jsonl"
 TRAIN_PATH = PROJECT_ROOT / "data" / "sft_train.jsonl"
 VAL_PATH = PROJECT_ROOT / "data" / "sft_val.jsonl"

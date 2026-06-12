@@ -6,13 +6,13 @@
     borderline     信息不足、正确答案是「先核实」的灰色场景
     offtopic       无关闲聊（不该触发反诈话术）+ prompt injection 探针（该被护栏拦）
 
-输出 evals/cases_v2_candidates.json，**必须人工评审**后才能改名为 cases_v2.json：
+输出 evals/cases/cases_v2_candidates.json，**必须人工评审**后才能改名为 cases_v2.json：
 检查标签是否正确、expected_keywords 是否可达、must_not_contain 是否会误伤
 （注意：规则检查是子串匹配，硬负例不要禁「诈骗」二字——「这不是诈骗」会被误判）。
 
 用法：
-    python scripts/expand_eval_cases.py                 # 全量生成
-    python scripts/expand_eval_cases.py --limit 2       # 每类只生成 2 条（调试）
+    python scripts/evaldata/expand_eval_cases.py                 # 全量生成
+    python scripts/evaldata/expand_eval_cases.py --limit 2       # 每类只生成 2 条（调试）
 """
 
 from __future__ import annotations
@@ -24,14 +24,14 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from npc_agent.config import MODEL  # noqa: E402
 from npc_agent.llm_client import get_client  # noqa: E402
 
-CASES_V1_PATH = PROJECT_ROOT / "evals" / "cases.json"
-OUTPUT_PATH = PROJECT_ROOT / "evals" / "cases_v2_candidates.json"
+CASES_V1_PATH = PROJECT_ROOT / "evals" / "cases" / "cases.json"
+OUTPUT_PATH = PROJECT_ROOT / "evals" / "cases" / "cases_v2_candidates.json"
 
 # v1 未覆盖或欠覆盖的诈骗类目（来自 data/knowledge_base.json 的 pattern-*）
 FRAUD_CATEGORIES = [
@@ -229,7 +229,7 @@ def main() -> None:
     print(f"\n共 {len(candidates)} 条候选 → {OUTPUT_PATH}")
     for label, n in counters.items():
         print(f"  {label}: {n}")
-    print("下一步：人工评审后与 cases.json 合并为 evals/cases_v2.json")
+    print("下一步：人工评审后与 cases.json 合并为 evals/cases/cases_v2.json")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 任务定义：给定一条短信，判断应当「拦截」（广告推销/诈骗/钓鱼/博彩/违法推广）
 还是「放行」（正常交流、官方通知、验证码等）。正类 = 拦截（label=1）。
 
-数据：hrwhisper/SpamMessage 分层采样（见 scripts/fetch_benchmark_data.py），
+数据：hrwhisper/SpamMessage 分层采样（见 scripts/evaldata/fetch_benchmark_data.py），
 dev 集只用于规则引擎调阈值，test 集报告最终指标。
 注意：该数据集对数字做了脱敏（手机号/金额/日期中的数字替换为 x），
 会削弱依赖 \\d 的正则规则，报告中已注明。
@@ -19,7 +19,7 @@ dev 集只用于规则引擎调阈值，test 集报告最终指标。
     python evals/benchmark_public.py --systems risk_score single_shot agent
 
 逐样本结果追加写 evals/results/benchmark_<system>.jsonl（可断点续跑，按 id 去重）；
-汇总指标写 evals/benchmark_report.md + evals/benchmark_metrics.json。
+汇总指标写 evals/reports/benchmark_report.md + evals/reports/benchmark_metrics.json。
 """
 
 from __future__ import annotations
@@ -43,8 +43,8 @@ from npc_agent.tools.risk_score import risk_score  # noqa: E402
 TEST_PATH = PROJECT_ROOT / "evals" / "data" / "spam_sample_v1.jsonl"
 DEV_PATH = PROJECT_ROOT / "evals" / "data" / "spam_sample_v1.dev.jsonl"
 RESULTS_DIR = PROJECT_ROOT / "evals" / "results"
-REPORT_PATH = PROJECT_ROOT / "evals" / "benchmark_report.md"
-METRICS_PATH = PROJECT_ROOT / "evals" / "benchmark_metrics.json"
+REPORT_PATH = PROJECT_ROOT / "evals" / "reports" / "benchmark_report.md"
+METRICS_PATH = PROJECT_ROOT / "evals" / "reports" / "benchmark_metrics.json"
 
 DATASET_SOURCE = "hrwhisper/SpamMessage@754d3a7"
 SAMPLE_SEED = 42
@@ -357,7 +357,7 @@ def write_report(
         f"- **数据集**: [{DATASET_SOURCE}](https://github.com/hrwhisper/SpamMessage)（约 80 万条带标签中文短信；"
         "label=1 垃圾【广告/诈骗/钓鱼】，label=0 正常。仓库未声明 license，本仓库仅分发派生小样本+出处行号）",
         f"- **采样**: 分层采样，seed={SAMPLE_SEED}；dev 100 条（仅用于规则引擎调阈值）+ test {n} 条（报告指标）。"
-        "样本文件: `evals/data/spam_sample_v1[.dev].jsonl`，由 `scripts/fetch_benchmark_data.py` 可复现",
+        "样本文件: `evals/data/spam_sample_v1[.dev].jsonl`，由 `scripts/evaldata/fetch_benchmark_data.py` 可复现",
         "- **任务**: 二分类「拦截 / 放行」，正类=拦截。LLM 系统通过提示词约束输出 `【结论】拦截/放行` 后正则解析；"
         "解析失败重试一次，仍失败按「放行」计（弃权的探测器拦不住任何东西），并单独报告 parse_fail_rate",
         f"- **被测系统**: ① risk_score 规则引擎（阈值 {threshold}，dev 上按 F1 选定后冻结）；"

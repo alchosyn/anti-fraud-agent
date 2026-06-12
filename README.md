@@ -54,7 +54,7 @@ User Input
 
 50 hand-written seed examples, distilled via DeepSeek to 220 training samples. Qwen2.5-1.5B + LoRA (rank 16), trained on Kaggle T4.
 
-Script: `scripts/train_lora.py`. Unsloth accelerated, auto-fallback to native transformers + peft if Unsloth is unavailable.
+Script: `scripts/training/train_lora.py`. Unsloth accelerated, auto-fallback to native transformers + peft if Unsloth is unavailable.
 
 ## GRPO Post-training
 
@@ -79,7 +79,7 @@ P3 and P4 counteract LLM-judge structure-bias. The judge naturally prefers markd
 - Warm-start from SFT LoRA adapter
 - 65 prompts, 4 generations/prompt, 2 epochs, 520 rollouts total
 - ~30 min on Colab T4, DeepSeek API cost under $1
-- Script: `scripts/train_grpo.py`, notebook: `notebooks/train_grpo_colab.ipynb`
+- Script: `scripts/training/train_grpo.py`, notebook: `notebooks/train_grpo_colab.ipynb`
 
 ## Evaluation Results
 
@@ -103,7 +103,7 @@ P3 and P4 counteract LLM-judge structure-bias. The judge naturally prefers markd
 
 SFT's biggest gain is in tone. Style transfer is where small-data fine-tuning pays off the most. GRPO improved citation and tone slightly, but the training set (65 prompts × 2 epochs) was too small to move the needle on overall. Citation can only be meaningfully improved by RAG. Both SFT and GRPO plateau at 1.6~1.8 while the RAG agent reaches 3.53.
 
-Full per-case report: `evals/compare_report.md`
+Full per-case report: `evals/reports/compare_report.md`
 
 ## Objective Benchmark on Public Data
 
@@ -119,7 +119,7 @@ Task: should this SMS be intercepted (ads/fraud/phishing) or released.
 | deepseek single-shot (no tools) | 0.669 | **0.904** | **0.769** | 44.8% | 2.1 s | 1.68 |
 | deepseek agent (risk_score + RAG) | **0.817** | 0.428 | 0.562 | **9.6%** | 6.7 s | 7.92 |
 
-Three honest findings (full report: `evals/benchmark_report.md`):
+Three honest findings (full report: `evals/reports/benchmark_report.md`):
 
 1. **The fraud rule engine is near-random out of domain** (ROC-AUC 0.49): its regexes
    target fraud signals, not generic ad spam — and the dataset masks digits (`x`),
@@ -132,12 +132,12 @@ Three honest findings (full report: `evals/benchmark_report.md`):
    *rewrote its own task* — "广告推销本身不在拦截清单里" — directly contradicting the
    prompt, because the anti-fraud persona + tool output overrode the task definition.
 
-Reproduce: `python scripts/fetch_benchmark_data.py && python evals/benchmark_public.py
+Reproduce: `python scripts/evaldata/fetch_benchmark_data.py && python evals/benchmark_public.py
 --systems risk_score single_shot agent` (committed sample: `evals/data/spam_sample_v1.jsonl`).
 
 ## Ablations (in-domain, 80-case eval set v2)
 
-Eval set v2 (`evals/cases_v2.json`): 80 reviewed cases — 52 fraud across 15+ patterns,
+Eval set v2 (`evals/cases/cases_v2.json`): 80 reviewed cases — 52 fraud across 15+ patterns,
 13 hard negatives (legitimate messages that *look* suspicious — measures false alarms),
 5 borderline, 9 off-topic/injection probes. Tool subsets via `step(active_tools=...)`,
 judge pinned to `gpt-4o-mini-2024-07-18`, temperature 0, long-memory injection disabled
@@ -146,7 +146,7 @@ every eval run).
 
 Full agent on v2: **92.5% rule pass (74/80), judge 4.42/5** (accuracy 4.72 /
 actionability 4.67 / citation 3.42 / tone 4.86), rule-vs-judge Spearman ρ = 0.51.
-Full report: `evals/report_v2.md`.
+Full report: `evals/reports/report_v2.md`.
 
 | Variant | content pass | judge overall | citation | hard-neg pass | latency |
 |---|---:|---:|---:|---:|---:|
@@ -231,42 +231,35 @@ src/npc_agent/
     web_search.py   Tavily search
 
 scripts/
-  # —— training ——
-  expand_sft_data.py     Seed expansion (50 → 220)
-  format_for_qwen.py     Convert to Qwen chat format
-  train_lora.py          LoRA SFT training
-  train_grpo.py          GRPO post-training
-  grpo_reward.py         Hybrid reward function
-  build_grpo_dataset.py  GRPO dataset builder
-  # —— eval data ——
-  fetch_benchmark_data.py  Public-dataset download + stratified sampling
-  expand_eval_cases.py     Eval-case candidate generation
-  build_cases_v2.py        Reviewed merge → cases_v2.json
-  # —— ops ——
-  bench_api.py           Single-endpoint load bench (asyncio + httpx)
-  smoke_rag.py           Manual RAG retrieval probe
+  training/           SFT/GRPO pipeline: expand_sft_data → format_for_qwen →
+                      train_lora → build_grpo_dataset → train_grpo (+grpo_reward)
+  evaldata/           fetch_benchmark_data (public-dataset sampling),
+                      expand_eval_cases, build_cases_v2
+  ops/                bench_api (load bench), smoke_rag, trace/history utilities
 
 backend/
-  main.py           FastAPI app
-  auth.py           JWT + bcrypt
-  db/orm.py         SQLAlchemy 2.0 models (users/sessions/messages/tool_calls)
-  db/models.py      Repository layer
-  services/         Redis client / cache / rate limit / pending handoff
+  main.py             FastAPI app
+  auth.py             JWT + bcrypt
+  db/orm.py           SQLAlchemy 2.0 models (users/sessions/messages/tool_calls)
+  db/models.py        Repository layer
+  services/           Redis client / cache / rate limit / pending handoff
   agent/integration.py  Agent → WebSocket streaming bridge (+ tool cache)
 
 evals/
-  run_compare.py        5-way comparison
-  judge.py              LLM-as-Judge (pinned snapshot)
-  cases.json            15 test scenarios (v1, frozen)
-  cases_v2.json         80 reviewed scenarios (incl. hard negatives)
-  benchmark_public.py   Public-dataset P/R/F1 harness
+  run_eval.py           Rule + judge eval runner
+  run_compare.py        5-way model comparison
   run_ablation.py       Tool-ablation runner
-  benchmark_report.md   Public benchmark results (committed)
+  benchmark_public.py   Public-dataset P/R/F1 harness
+  judge.py              LLM-as-Judge (pinned snapshot)
+  cases/                cases.json (v1, frozen) / cases_v2.json (80 reviewed)
+  data/                 Committed benchmark samples (stratified, seeded)
+  reports/              benchmark / ablation / v2 / 5-way reports & metrics
 
 deploy/             Nginx + TLS + prod compose + DEPLOY.md
-docs/PERF.md        Load-test numbers & event-loop fix writeup
+docs/               PERF.md (load-test writeup), RESUME_BULLETS.md
 tests/backend/      28 backend tests (fakeredis + ASGI, no network)
-.github/workflows/  CI: backend tests + offline eval tests
+.github/workflows/  CI: ruff lint + backend tests + offline eval tests
+pyproject.toml      ruff + pytest config (single tool-config entry point)
 
 notebooks/
   train_grpo_colab.ipynb       GRPO training (Colab)
