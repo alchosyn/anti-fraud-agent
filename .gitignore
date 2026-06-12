@@ -12,6 +12,8 @@ DS_Store
 .env
 
 chat_history.json
+chat_history_backup.json
+compression_test_log.txt
 data/traces/
 
 # 评估生成的运行时报告（每次跑会覆盖，不入版本控制）

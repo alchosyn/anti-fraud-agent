@@ -1,8 +1,10 @@
 """长期向量记忆：跨会话的摘要存储与检索。"""
 
 import json
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
 from .config import EMBEDDING_MODEL, PROJECT_ROOT
 
 MEMORY_DIR = PROJECT_ROOT / "data" / "long_memory"
@@ -24,7 +26,7 @@ def _ensure_loaded() -> None:
 
     if VECTORS_PATH.exists() and SUMMARIES_PATH.exists():
         _vectors = np.load(VECTORS_PATH)["arr_0"]
-        with open(SUMMARIES_PATH, "r", encoding="utf-8") as f:
+        with open(SUMMARIES_PATH, encoding="utf-8") as f:
             _summaries = json.load(f)
         print(f"[long_memory] 已加载 {len(_summaries)} 条历史记忆")
     else:

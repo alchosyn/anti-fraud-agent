@@ -314,11 +314,11 @@ def build_trainer(args, model, tokenizer, dataset, reward_func):
 
     try:
         from trl import GRPOConfig, GRPOTrainer
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "GRPOTrainer 需要 trl >= 0.13。"
             "Kaggle 上请先 pip install -U 'trl>=0.18,<0.25'"
-        )
+        ) from e
 
     use_bf16, use_fp16 = _resolve_precision(args.precision)
     optim = _resolve_optim(args.optim)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from fastapi import Depends, HTTPException, status
@@ -34,7 +34,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 # JWT
 # ---------------------------------------------------------------------------
 def create_access_token(user_id: int, username: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    expire = datetime.now(UTC) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     payload = {
         "sub": str(user_id),
         "username": username,
@@ -52,7 +52,10 @@ def decode_token(token: str) -> dict:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         return {"user_id": int(user_id), "username": payload.get("username", "")}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        # 不向客户端泄露 JWT 解析细节，截断异常链
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        ) from None
 
 
 # ---------------------------------------------------------------------------

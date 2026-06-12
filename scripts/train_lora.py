@@ -17,9 +17,6 @@ Kaggle Script Kernel 用法：直接上传本文件作 Code，把 sft_train.json
 from __future__ import annotations
 
 import argparse
-import json
-import os
-import sys
 from pathlib import Path
 
 # ─── 简化版 SYSTEM_PROMPT（去掉 ReAct 工具规则，1.5B 不调工具） ─────────────

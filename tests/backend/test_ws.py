@@ -112,7 +112,8 @@ def test_ws_session_consumed_once(ws_client: TestClient):
     sid = ws_client.post("/api/analyze", json={"message": "只许一次"}, headers=h).json()["session_id"]
 
     with ws_client.websocket_connect(f"/api/ws/{sid}?token={token}") as ws:
-        ws.receive_json(); ws.receive_json()
+        ws.receive_json()
+        ws.receive_json()
 
     with ws_client.websocket_connect(f"/api/ws/{sid}?token={token}") as ws:
         msg = ws.receive_json()

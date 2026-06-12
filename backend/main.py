@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .db.database import dispose_engine, init_db
-from .services.redis_client import close_redis
 from .api.routes import router as api_router
 from .api.websocket import router as ws_router
+from .db.database import dispose_engine, init_db
+from .services.redis_client import close_redis
 
 
 @asynccontextmanager

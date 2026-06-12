@@ -74,7 +74,7 @@ def main() -> None:
     rows: list[dict] = []
 
     # 1. 从 cases.json 提取 15 条 prompt
-    with open(CASES_PATH, "r", encoding="utf-8") as f:
+    with open(CASES_PATH, encoding="utf-8") as f:
         cases = json.load(f)
     for c in cases:
         prompt = c.get("user_input", "").strip()
@@ -83,7 +83,7 @@ def main() -> None:
         rows.append(make_row(prompt, f"cases.json::{c.get('id', '?')}"))
 
     # 2. 从 sft_seeds.json 提取 50 条 user_input
-    with open(SEEDS_PATH, "r", encoding="utf-8") as f:
+    with open(SEEDS_PATH, encoding="utf-8") as f:
         seeds = json.load(f)
     for s in seeds:
         prompt = s.get("user_input", "").strip()
@@ -113,7 +113,7 @@ def main() -> None:
     print(f"  来自 cases.json: {sum(1 for r in deduped if r['_source'].startswith('cases'))}")
     print(f"  来自 sft_seeds.json: {sum(1 for r in deduped if r['_source'].startswith('sft_seeds'))}")
     print(f"  含紧急关键词的 prompt: {n_emergency}")
-    print(f"  示例（前 3 条）:")
+    print("  示例（前 3 条）:")
     for r in deduped[:3]:
         print(f"    [{r['_source']}] {r['prompt'][-1]['content'][:50]}...")
         if r["scenario_keywords"]:

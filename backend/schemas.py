@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-
 # ── Auth ──
 
 class RegisterRequest(BaseModel):
@@ -19,7 +18,7 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    user: "UserInfo"
+    user: UserInfo
 
 
 class UserInfo(BaseModel):

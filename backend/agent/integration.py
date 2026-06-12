@@ -13,9 +13,9 @@ import asyncio
 import json
 import re as _re
 import sys
-from datetime import datetime, timezone
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import AsyncGenerator
 
 # ---------------------------------------------------------------------------
 # Make the project's src/ importable
@@ -31,12 +31,12 @@ _CACHEABLE_TOOLS = {"search_knowledge", "risk_score"}
 
 _REAL_AGENT_AVAILABLE = False
 try:
-    from npc_agent.config import MAX_STEPS, MODEL          # noqa: E402
-    from npc_agent.llm_client import get_client             # noqa: E402
-    from npc_agent.memory import SYSTEM_PROMPT              # noqa: E402
-    from npc_agent.tools import tool_map, tools             # noqa: E402
-    from npc_agent.tools.input_guard import check_injection # noqa: E402
-    from npc_agent.utils import clean_reply                 # noqa: E402
+    from npc_agent.config import MAX_STEPS, MODEL  # noqa: E402
+    from npc_agent.llm_client import get_client  # noqa: E402
+    from npc_agent.persona import SYSTEM_PROMPT  # noqa: E402
+    from npc_agent.tools import tool_map, tools  # noqa: E402
+    from npc_agent.tools.input_guard import check_injection  # noqa: E402
+    from npc_agent.utils import clean_reply  # noqa: E402
     _REAL_AGENT_AVAILABLE = True
     print("[agent] 信噪 Agent 加载成功")
 except Exception as exc:
@@ -239,7 +239,7 @@ async def run_real_agent(
                 "tool_input": args,
                 "tool_output": tool_output,
                 "cached": cache_hit,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             thought = ""  # only first tool call of each round carries the thought
 
@@ -366,7 +366,7 @@ async def run_mock_agent(
             "step_number": i, "total_steps": total_steps,
             "thought": data["thought"], "tool_name": data["tool_name"],
             "tool_input": data["tool_input"], "tool_output": data["tool_output"],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     await asyncio.sleep(0.5)
     yield {"type": "result", **MOCK_RESULT}

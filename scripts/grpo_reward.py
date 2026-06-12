@@ -25,8 +25,8 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 # ─── 规则项的常量 ─────────────────────────────────────────
 

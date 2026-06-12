@@ -22,7 +22,7 @@ def _fmt_dt(dt: datetime.datetime | None) -> str:
     if dt is None:
         return ""
     if dt.tzinfo is not None:
-        dt = dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        dt = dt.astimezone(datetime.UTC).replace(tzinfo=None)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 

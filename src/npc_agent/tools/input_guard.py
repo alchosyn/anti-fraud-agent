@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import re
 
-
 _INJECTION_PATTERNS: tuple[tuple[str, int, re.Pattern[str]], ...] = (
     ("角色覆盖指令", 35, re.compile(
         r"(ignore (?:all |the |your )?(?:previous|above|prior) (?:instructions?|prompts?|rules?)"

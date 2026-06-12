@@ -28,7 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "evals"))
 
 from npc_agent.agent import step  # noqa: E402
-from npc_agent.memory import SYSTEM_PROMPT  # noqa: E402
+from npc_agent.persona import SYSTEM_PROMPT  # noqa: E402
 
 CASES_PATH = PROJECT_ROOT / "evals" / "cases.json"
 
@@ -37,7 +37,7 @@ EVAL_STEP_KWARGS = {"use_long_memory": False, "persist": False, "temperature": 0
 
 
 def load_cases(path: Path | None = None) -> list[dict]:
-    with open(path or CASES_PATH, "r", encoding="utf-8") as f:
+    with open(path or CASES_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 

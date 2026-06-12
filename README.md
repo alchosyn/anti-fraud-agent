@@ -218,23 +218,33 @@ VPS 生产部署（Nginx + HTTPS）：见 [deploy/DEPLOY.md](deploy/DEPLOY.md)�
 
 ```
 src/npc_agent/
-  agent.py          ReAct loop
+  agent.py          ReAct loop (step() with eval-friendly kwargs)
+  persona.py        信噪 system prompt (single source of truth)
   llm_client.py     DeepSeek client
-  memory.py         Conversation memory
-  tracing.py        Langfuse tracing
+  memory.py         In-session compression + history persistence
+  long_memory.py    Cross-session vector memory
+  tracing.py        Per-turn trace logging
   tools/
-    risk_score.py   Rule-based scorer
+    risk_score.py   Rule-based scorer (regex + URL analysis)
     input_guard.py  Injection detection
-    knowledge.py    BM25 retrieval
+    knowledge.py    Hybrid BM25 + vector retrieval
     web_search.py   Tavily search
 
 scripts/
+  # —— training ——
   expand_sft_data.py     Seed expansion (50 → 220)
   format_for_qwen.py     Convert to Qwen chat format
   train_lora.py          LoRA SFT training
   train_grpo.py          GRPO post-training
   grpo_reward.py         Hybrid reward function
   build_grpo_dataset.py  GRPO dataset builder
+  # —— eval data ——
+  fetch_benchmark_data.py  Public-dataset download + stratified sampling
+  expand_eval_cases.py     Eval-case candidate generation
+  build_cases_v2.py        Reviewed merge → cases_v2.json
+  # —— ops ——
+  bench_api.py           Single-endpoint load bench (asyncio + httpx)
+  smoke_rag.py           Manual RAG retrieval probe
 
 backend/
   main.py           FastAPI app

@@ -14,7 +14,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from grpo_reward import batch_compute_reward, compute_reward  # noqa: E402
 from train_grpo import _to_text, _user_text  # noqa: E402
 
-
 # ─── Mock judge 函数 ─────────────────────────────────────
 
 

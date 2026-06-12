@@ -79,7 +79,7 @@ def run_variant(
 
     done: dict[str, dict] = {}
     if out_path.exists():
-        with open(out_path, "r", encoding="utf-8") as f:
+        with open(out_path, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     row = json.loads(line)

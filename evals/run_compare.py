@@ -22,8 +22,8 @@ import argparse
 import json
 import statistics
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -65,7 +65,7 @@ def infer_deepseek_base(user_input: str) -> str:
 
 def infer_deepseek_agent(user_input: str) -> str:
     from npc_agent.agent import step
-    from npc_agent.memory import SYSTEM_PROMPT
+    from npc_agent.persona import SYSTEM_PROMPT
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     reply, _ = step(messages, user_input)
@@ -144,7 +144,7 @@ def _make_qwen_inferer(base_name: str, lora_path: str | None) -> Callable[[str],
 
 
 def load_cases(limit: int | None = None) -> list[dict]:
-    with open(CASES_PATH, "r", encoding="utf-8") as f:
+    with open(CASES_PATH, encoding="utf-8") as f:
         cases = json.load(f)
     if limit:
         cases = cases[:limit]
@@ -249,10 +249,10 @@ def write_report(summary: dict, all_results: dict[str, list[dict]]) -> None:
             delta = ql["overall"] - qb["overall"]
             sign = "+" if delta >= 0 else ""
             lines.extend([
-                f"## LoRA 微调效果",
-                f"",
+                "## LoRA 微调效果",
+                "",
                 f"Qwen2.5-1.5B 微调后 overall {qb['overall']} → {ql['overall']} ({sign}{delta:.2f})",
-                f"",
+                "",
             ])
 
     if "deepseek-agent" in summary and "qwen-lora" in summary:
@@ -261,10 +261,10 @@ def write_report(summary: dict, all_results: dict[str, list[dict]]) -> None:
         if da["overall"] and ql["overall"]:
             gap = da["overall"] - ql["overall"]
             lines.extend([
-                f"## 小模型逼近大模型程度",
-                f"",
+                "## 小模型逼近大模型程度",
+                "",
                 f"Qwen2.5-1.5B+LoRA 离 DeepSeek+Agent 还差 {gap:.2f} 分（{ql['overall']} vs {da['overall']}）",
-                f"",
+                "",
             ])
 
     # 每个 case 的并列对比
@@ -341,7 +341,7 @@ def main() -> None:
         all_results[name] = run_strategy(name, inferer, cases)
 
     if not args.no_judge:
-        print(f"\n=== LLM-as-judge 评分 ===")
+        print("\n=== LLM-as-judge 评分 ===")
         for name in all_results:
             all_results[name] = judge_all(all_results[name], cases_by_id)
 

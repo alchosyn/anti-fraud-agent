@@ -7,16 +7,23 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..schemas import (
-    AnalyzeRequest, AnalyzeResponse,
-    HistoryListResponse, SessionDetail,
-    RegisterRequest, LoginRequest, TokenResponse, UserInfo,
+from ..auth import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    verify_password,
 )
 from ..db import models
 from ..db.database import get_session
-from ..auth import (
-    hash_password, verify_password,
-    create_access_token, get_current_user,
+from ..schemas import (
+    AnalyzeRequest,
+    AnalyzeResponse,
+    HistoryListResponse,
+    LoginRequest,
+    RegisterRequest,
+    SessionDetail,
+    TokenResponse,
+    UserInfo,
 )
 from ..services.cache import get_cached_analysis
 from ..services.pending import put_pending
@@ -50,9 +57,9 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_session)
         user_id = await models.create_user(db, req.username, hashed, req.display_name)
         await db.commit()
     except IntegrityError:
-        # 并发注册同名：唯一索引兜底
+        # 并发注册同名：唯一索引兜底；预期内冲突，不保留异常链
         await db.rollback()
-        raise HTTPException(status_code=409, detail="Username already taken")
+        raise HTTPException(status_code=409, detail="Username already taken") from None
 
     token = create_access_token(user_id, req.username)
     return TokenResponse(

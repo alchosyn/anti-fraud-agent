@@ -65,9 +65,9 @@ LEGIT_FORBIDDEN = ["假冒", "立即报警", "马上挂断"]
 
 
 def main() -> None:
-    with open(V1_PATH, "r", encoding="utf-8") as f:
+    with open(V1_PATH, encoding="utf-8") as f:
         v1 = json.load(f)
-    with open(CANDIDATES_PATH, "r", encoding="utf-8") as f:
+    with open(CANDIDATES_PATH, encoding="utf-8") as f:
         candidates = json.load(f)
 
     merged: list[dict] = []

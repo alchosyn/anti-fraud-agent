@@ -83,7 +83,7 @@ class TransientLLMError(RuntimeError):
 
 
 def load_jsonl(path: Path) -> list[dict]:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
 
 
@@ -135,7 +135,7 @@ def _trace_tokens(trace: dict) -> tuple[int, int, int]:
 def _llm_classify(text: str, active_tools: tuple[str, ...]) -> dict:
     """共用的 LLM 分类路径：active_tools=() 即 single_shot，否则为 agent。"""
     from npc_agent.agent import step
-    from npc_agent.memory import SYSTEM_PROMPT
+    from npc_agent.persona import SYSTEM_PROMPT
 
     def ask(user_input: str) -> tuple[str, dict]:
         trace: dict = {}

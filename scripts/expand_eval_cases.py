@@ -173,7 +173,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="每类/每类目只生成 N 条（调试）")
     args = parser.parse_args()
 
-    with open(CASES_V1_PATH, "r", encoding="utf-8") as f:
+    with open(CASES_V1_PATH, encoding="utf-8") as f:
         v1 = json.load(f)
     examples = json.dumps(
         [{k: c[k] for k in ("user_input", "expected_tool_calls", "expected_keywords")} for c in v1[:3]],

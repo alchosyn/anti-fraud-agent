@@ -1,5 +1,6 @@
-from src.npc_agent.tools import knowledge
 import numpy as np
+
+from src.npc_agent.tools import knowledge
 
 knowledge._ensure_loaded()
 q = knowledge._model.encode("我妈接到电话说医保卡被人盗用了")

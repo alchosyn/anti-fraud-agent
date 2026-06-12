@@ -52,7 +52,7 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    sessions: Mapped[list["AnalysisSession"]] = relationship(
+    sessions: Mapped[list[AnalysisSession]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
 
@@ -76,14 +76,14 @@ class AnalysisSession(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    user: Mapped["User"] = relationship(back_populates="sessions")
-    messages: Mapped[list["Message"]] = relationship(
+    user: Mapped[User] = relationship(back_populates="sessions")
+    messages: Mapped[list[Message]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Message.seq",
     )
-    tool_calls: Mapped[list["ToolCall"]] = relationship(
+    tool_calls: Mapped[list[ToolCall]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -110,7 +110,7 @@ class Message(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    session: Mapped["AnalysisSession"] = relationship(back_populates="messages")
+    session: Mapped[AnalysisSession] = relationship(back_populates="messages")
 
     __table_args__ = (UniqueConstraint("session_id", "seq", name="uq_messages_session_seq"),)
 
@@ -134,4 +134,4 @@ class ToolCall(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    session: Mapped["AnalysisSession"] = relationship(back_populates="tool_calls")
+    session: Mapped[AnalysisSession] = relationship(back_populates="tool_calls")

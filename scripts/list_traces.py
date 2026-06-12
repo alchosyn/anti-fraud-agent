@@ -12,7 +12,7 @@ def main() -> None:
     files = glob.glob(str(TRACE_DIR / "**" / "*.json"), recursive=True)
     print(f"找到 {len(files)} 个 trace 文件")
     for f in files:
-        with open(f, "r", encoding="utf-8") as fh:
+        with open(f, encoding="utf-8") as fh:
             print(json.dumps(json.load(fh), ensure_ascii=False, indent=2))
 
 

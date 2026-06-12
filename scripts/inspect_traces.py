@@ -13,7 +13,7 @@ def main() -> None:
     if not files:
         print("没有找到任何 trace 文件")
         return
-    with open(files[-1], "r", encoding="utf-8") as f:
+    with open(files[-1], encoding="utf-8") as f:
         trace = json.load(f)
     for step in trace["steps"]:
         print(step)

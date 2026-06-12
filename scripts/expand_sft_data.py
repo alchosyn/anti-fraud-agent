@@ -81,7 +81,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="只扩前 N 条种子（调试）")
     args = parser.parse_args()
 
-    with open(SEEDS_PATH, "r", encoding="utf-8") as f:
+    with open(SEEDS_PATH, encoding="utf-8") as f:
         seeds = json.load(f)
     if args.limit:
         seeds = seeds[: args.limit]
