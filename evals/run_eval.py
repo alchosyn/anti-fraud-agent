@@ -4,10 +4,14 @@
     python evals/run_eval.py                # 只跑规则匹配
     python evals/run_eval.py --judge        # 同时跑 LLM-as-judge 并做一致性分析
     python evals/run_eval.py --limit 3      # 只跑前 3 个 case（调试用）
+    python evals/run_eval.py --cases evals/cases_v2.json --out-suffix _v2
 
 输出：
-    evals/report.md       人类可读报告
-    evals/results.json    机器可读完整结果
+    evals/report{suffix}.md       人类可读报告
+    evals/results{suffix}.json    机器可读完整结果
+
+评估一律以 use_long_memory=False / persist=False / temperature=0.0 调用 agent：
+不注入本机私人长期记忆（历史版本曾有此污染）、不写 chat_history/trace 文件、输出求稳定。
 """
 
 from __future__ import annotations
@@ -27,12 +31,13 @@ from npc_agent.agent import step  # noqa: E402
 from npc_agent.memory import SYSTEM_PROMPT  # noqa: E402
 
 CASES_PATH = PROJECT_ROOT / "evals" / "cases.json"
-REPORT_PATH = PROJECT_ROOT / "evals" / "report.md"
-RESULTS_PATH = PROJECT_ROOT / "evals" / "results.json"
+
+# 评估统一的 step() 配置：不注入私人记忆、不落盘、温度 0
+EVAL_STEP_KWARGS = {"use_long_memory": False, "persist": False, "temperature": 0.0}
 
 
-def load_cases() -> list[dict]:
-    with open(CASES_PATH, "r", encoding="utf-8") as f:
+def load_cases(path: Path | None = None) -> list[dict]:
+    with open(path or CASES_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -82,12 +87,14 @@ def evaluate_rules(case: dict, reply: str, tool_calls_made: list[str]) -> dict:
     return {"pass": overall_pass, "checks": checks}
 
 
-def run_one_case(case: dict) -> dict:
-    """跑一个 case，返回完整结果（不含 judge）。"""
+def run_one_case(case: dict, step_kwargs: dict | None = None) -> dict:
+    """跑一个 case，返回完整结果（不含 judge）。step_kwargs 透传给 agent.step()。"""
+    if step_kwargs is None:
+        step_kwargs = EVAL_STEP_KWARGS
     messages = fresh_messages()
     t0 = time.time()
     try:
-        reply, messages_after = step(messages, case["user_input"])
+        reply, messages_after = step(messages, case["user_input"], **step_kwargs)
         latency_ms = int((time.time() - t0) * 1000)
         # 从 messages 里提取被调用的工具名
         tool_calls_made = []
@@ -119,8 +126,10 @@ def run_one_case(case: dict) -> dict:
         }
 
 
-def write_report(results: list[dict], with_judge: bool = False) -> None:
+def write_report(results: list[dict], with_judge: bool = False, report_path: Path | None = None) -> None:
     """生成 markdown 报告。"""
+    if report_path is None:
+        report_path = PROJECT_ROOT / "evals" / "report.md"
     total = len(results)
     rule_passed = sum(1 for r in results if r["rule_result"]["pass"])
     rule_pass_rate = rule_passed / total if total else 0
@@ -191,17 +200,22 @@ def write_report(results: list[dict], with_judge: bool = False) -> None:
                     lines.append(f"- `{name}` 失败: {json.dumps(c, ensure_ascii=False)}")
         lines.append("")
 
-    REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
-    print(f"\n报告写入: {REPORT_PATH}")
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"\n报告写入: {report_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--judge", action="store_true", help="启用 LLM-as-judge 评分")
     parser.add_argument("--limit", type=int, default=None, help="只跑前 N 个 case")
+    parser.add_argument("--cases", type=Path, default=CASES_PATH, help="case 文件路径")
+    parser.add_argument("--out-suffix", default="", help="输出文件名后缀，如 _v2 → report_v2.md")
     args = parser.parse_args()
 
-    cases = load_cases()
+    report_path = PROJECT_ROOT / "evals" / f"report{args.out_suffix}.md"
+    results_path = PROJECT_ROOT / "evals" / f"results{args.out_suffix}.json"
+
+    cases = load_cases(args.cases)
     if args.limit:
         cases = cases[: args.limit]
 
@@ -235,8 +249,8 @@ def main() -> None:
                 print(f"    judge error: {e}")
                 r["judge_result"] = None
 
-    RESULTS_PATH.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-    write_report(results, with_judge=args.judge)
+    results_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_report(results, with_judge=args.judge, report_path=report_path)
 
 
 if __name__ == "__main__":

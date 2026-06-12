@@ -17,8 +17,13 @@ data/traces/
 # 评估生成的运行时报告（每次跑会覆盖，不入版本控制）
 evals/report.md
 evals/results.json
-evals/compare_report.md
 evals/compare_results.json
+# 注意：compare_report.md（5-way 对比）、report_v2.md、benchmark_report.md、
+# ablation_report.md 是评估证据，入版本控制
+
+# 公开基准：原始数据缓存（58MB，可由脚本重下）与逐样本运行结果不入库
+data/benchmarks/
+evals/results/
 
 # SFT 生成数据（由种子 + 脚本可重现）
 data/sft_expanded.jsonl
@@ -40,3 +45,9 @@ outputs/
 backend/db/*.db
 frontend/node_modules/
 frontend/dist/
+tests/backend/.tmp_test.db
+bench.db
+smoke_*.db
+
+# 部署时由 nginx.bootstrap.conf / nginx.conf 生成（含真实域名）
+deploy/nginx.live.conf

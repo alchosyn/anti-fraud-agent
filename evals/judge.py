@@ -17,7 +17,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from openai import OpenAI  # noqa: E402
 from npc_agent.config import get_env  # noqa: E402
 
-JUDGE_MODEL = "gpt-4o-mini"
+# 钉到带日期的模型快照：judge 漂移会让跨期对比失效
+JUDGE_MODEL = "gpt-4o-mini-2024-07-18"
 
 _judge_client: OpenAI | None = None
 

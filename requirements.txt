@@ -13,5 +13,9 @@ sentence-transformers>=2.2.0
 rank-bm25>=0.2.2
 numpy>=1.24.0
 
+# Benchmark metrics (evals/benchmark_public.py)
+scikit-learn>=1.4
+requests>=2.31.0
+
 # Notebook utilities (for clean_notebook.py script)
 nbformat>=5.0.0
