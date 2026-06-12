@@ -1,5 +1,15 @@
 fastapi>=0.111.0
 uvicorn[standard]>=0.30.0
 websockets>=12.0
-aiosqlite>=0.20.0
 pydantic>=2.0.0
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+
+# Database: SQLAlchemy 2.0 async ORM
+# 生产 PostgreSQL（asyncpg），本地/测试回落 SQLite（aiosqlite）
+sqlalchemy>=2.0.30
+asyncpg>=0.29.0
+aiosqlite>=0.20.0
+
+# Cache & rate limiting
+redis>=5.0.0

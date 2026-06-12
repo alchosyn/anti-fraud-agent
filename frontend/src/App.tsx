@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ChatMessage, StepMessage, ResultMessage, HistoryRecord, MessageType, WSMessage } from './types';
+import { useAuth } from './hooks/useAuth';
 import { useApi } from './hooks/useApi';
 import { useWebSocket } from './hooks/useWebSocket';
+import LoginPage from './components/LoginPage';
 import ChatPanel from './components/ChatPanel';
 import ReasoningPanel from './components/ReasoningPanel';
 import HistoryPanel from './components/HistoryPanel';
@@ -10,6 +12,8 @@ import MessageInput from './components/MessageInput';
 type MobileTab = 'chat' | 'reasoning' | 'history';
 
 export default function App() {
+  const { auth, isLoggedIn, token, user, login, register, logout } = useAuth();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [steps, setSteps] = useState<StepMessage[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -17,12 +21,15 @@ export default function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chat');
 
-  const { submitAnalysis, fetchHistory, fetchSessionDetail } = useApi();
-  const { connect } = useWebSocket();
+  const { submitAnalysis, fetchHistory, fetchSessionDetail } = useApi(token);
+  const { connect } = useWebSocket(token);
 
+  // Fetch history on login
   useEffect(() => {
-    fetchHistory().then(setHistory).catch(console.error);
-  }, [fetchHistory]);
+    if (isLoggedIn) {
+      fetchHistory().then(setHistory).catch(console.error);
+    }
+  }, [isLoggedIn, fetchHistory]);
 
   const handleWSMessage = useCallback((msg: WSMessage) => {
     if (msg.type === 'step') {
@@ -46,6 +53,14 @@ export default function App() {
 
   const handleSubmit = useCallback(
     async (message: string, messageType: MessageType) => {
+      // Build conversation history from existing messages for context
+      const chatHistory = messages
+        .filter((m) => m.role === 'user' || (m.role === 'agent' && m.result))
+        .map((m) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.role === 'user' ? m.content : (m.result?.summary ?? m.content),
+        }));
+
       setMessages((prev) => [
         ...prev,
         { id: `user-${Date.now()}`, role: 'user', content: message, messageType },
@@ -53,7 +68,7 @@ export default function App() {
       setSteps([]);
       setIsAnalyzing(true);
       try {
-        const sessionId = await submitAnalysis(message, messageType);
+        const sessionId = await submitAnalysis(message, messageType, chatHistory);
         setActiveSessionId(sessionId);
         connect(sessionId, handleWSMessage);
       } catch {
@@ -64,7 +79,7 @@ export default function App() {
         ]);
       }
     },
-    [submitAnalysis, connect, handleWSMessage],
+    [messages, submitAnalysis, connect, handleWSMessage],
   );
 
   const handleHistorySelect = useCallback(
@@ -77,15 +92,15 @@ export default function App() {
         const chatMessages: ChatMessage[] = [
           { id: `user-${sessionId}`, role: 'user', content: detail.message, messageType: detail.message_type },
         ];
-        if (detail.verdict && detail.summary) {
+        if (detail.summary) {
           chatMessages.push({
             id: `agent-${sessionId}`,
             role: 'agent',
             content: detail.summary,
             result: {
               type: 'result',
-              verdict: detail.verdict,
-              confidence: detail.confidence ?? 0,
+              verdict: detail.verdict ?? null,
+              confidence: detail.confidence ?? null,
               summary: detail.summary,
               advice: detail.advice,
               evidence: [],
@@ -101,6 +116,26 @@ export default function App() {
     [fetchSessionDetail],
   );
 
+  const handleLogin = useCallback(
+    async (username: string, password: string) => {
+      await login(username, password);
+    },
+    [login],
+  );
+
+  const handleRegister = useCallback(
+    async (username: string, password: string, displayName: string) => {
+      await register(username, password, displayName);
+    },
+    [register],
+  );
+
+  // ── Not logged in → show login page ──
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
+  }
+
+  // ── Logged in → main app ──
   return (
     <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #e7e7dd, #eee, #dad8d4)' }}>
       {/* ── Rhine Lab Header ── */}
@@ -119,6 +154,15 @@ export default function App() {
         {/* decorative line */}
         <div className="flex-1 h-px bg-white/10 mx-4" />
         <span className="text-base tracking-[2px] text-rl-accent font-bold">信噪</span>
+        {/* user info + logout */}
+        <div className="h-4 w-px bg-white/20 mx-2" />
+        <span className="text-[10px] text-rl-muted tracking-[1px]">{user?.display_name}</span>
+        <button
+          onClick={logout}
+          className="text-[10px] text-rl-muted hover:text-rl-accent tracking-[1px] uppercase transition-colors"
+        >
+          LOGOUT
+        </button>
       </header>
 
       {/* ── 2px accent bar ── */}

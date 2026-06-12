@@ -46,47 +46,59 @@ export default function ChatPanel({ messages }: Props) {
               <p className="whitespace-pre-wrap">{msg.content}</p>
             ) : msg.result ? (
               <div className="space-y-3">
-                {/* verdict */}
-                <div className="flex items-center gap-3">
-                  <VerdictBadge verdict={msg.result.verdict} />
-                  <span className="text-[10px] text-rl-muted font-bold tracking-[1px]">
-                    CONFIDENCE {(msg.result.confidence * 100).toFixed(0)}%
-                  </span>
-                </div>
-
-                {/* divider */}
-                <div className="h-px bg-rl-border" />
+                {/* verdict + confidence — only when tools were used */}
+                {msg.result.verdict && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <VerdictBadge verdict={msg.result.verdict} />
+                      {msg.result.confidence != null && (
+                        <span className="text-[10px] text-rl-muted font-bold tracking-[1px]">
+                          CONFIDENCE {(msg.result.confidence * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-px bg-rl-border" />
+                  </>
+                )}
 
                 {/* summary */}
                 <p className="whitespace-pre-wrap text-rl-text/80 text-[13px]">{msg.result.summary}</p>
 
-                {/* advice */}
-                <div className="border border-rl-border p-3">
-                  <p className="text-[10px] font-bold text-rl-accent tracking-[1.5px] uppercase mb-2">建议操作</p>
-                  <ul className="space-y-1">
-                    {msg.result.advice.map((a, i) => (
-                      <li key={i} className="flex gap-2 text-[12px] text-rl-text/70">
-                        <span className="text-rl-accent shrink-0">—</span>
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {/* advice — collapsible, only when non-empty */}
+                {msg.result.advice.length > 0 && (
+                  <details className="group">
+                    <summary className="text-[10px] text-rl-muted cursor-pointer hover:text-rl-text font-bold tracking-[1px] uppercase">
+                      ▸ 建议操作 ({msg.result.advice.length})
+                    </summary>
+                    <div className="mt-2 border border-rl-border p-3">
+                      <ul className="space-y-1">
+                        {msg.result.advice.map((a, i) => (
+                          <li key={i} className="flex gap-2 text-[12px] text-rl-text/70">
+                            <span className="text-rl-accent shrink-0">—</span>
+                            {a}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
+                )}
 
-                {/* evidence */}
-                <details className="group">
-                  <summary className="text-[10px] text-rl-muted cursor-pointer hover:text-rl-text font-bold tracking-[1px] uppercase">
-                    ▸ Evidence ({msg.result.evidence.length})
-                  </summary>
-                  <div className="mt-2 space-y-1">
-                    {msg.result.evidence.map((e, i) => (
-                      <div key={i} className="text-[11px] text-rl-text/60 bg-rl-surface border border-rl-border px-2.5 py-1.5">
-                        <span className="font-bold text-rl-text/80">[{e.source}]</span>{' '}
-                        {e.finding}
-                      </div>
-                    ))}
-                  </div>
-                </details>
+                {/* evidence — only when non-empty */}
+                {msg.result.evidence.length > 0 && (
+                  <details className="group">
+                    <summary className="text-[10px] text-rl-muted cursor-pointer hover:text-rl-text font-bold tracking-[1px] uppercase">
+                      ▸ Evidence ({msg.result.evidence.length})
+                    </summary>
+                    <div className="mt-2 space-y-1">
+                      {msg.result.evidence.map((e, i) => (
+                        <div key={i} className="text-[11px] text-rl-text/60 bg-rl-surface border border-rl-border px-2.5 py-1.5">
+                          <span className="font-bold text-rl-text/80">[{e.source}]</span>{' '}
+                          {e.finding}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
             ) : (
               <p className="whitespace-pre-wrap">{msg.content}</p>

@@ -1,0 +1,30 @@
+.git
+.venv
+.idea
+__pycache__
+**/__pycache__
+*.pyc
+
+# 前端（独立构建）与开发产物
+frontend/
+notebooks/
+outputs/
+*.safetensors
+*.bin
+
+# 数据与运行时产物（镜像只需要 knowledge_base.json）
+data/benchmarks/
+data/traces/
+data/long_memory/
+data/*.jsonl
+evals/
+tests/
+scripts/
+chat_history*.json
+*.db
+*.log
+
+# 配置与文档
+.env
+*.md
+start.ps1

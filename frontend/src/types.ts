@@ -1,3 +1,16 @@
+/* ---- Auth ---- */
+
+export interface UserInfo {
+  user_id: number;
+  username: string;
+  display_name: string;
+}
+
+export interface AuthState {
+  token: string;
+  user: UserInfo;
+}
+
 /* ---- WebSocket message types ---- */
 
 export interface StepMessage {
@@ -13,8 +26,8 @@ export interface StepMessage {
 
 export interface ResultMessage {
   type: 'result';
-  verdict: Verdict;
-  confidence: number;
+  verdict: Verdict | null;
+  confidence: number | null;
   summary: string;
   advice: string[];
   evidence: Evidence[];

@@ -1,0 +1,65 @@
+# 本地/演示环境编排：app + PostgreSQL + Redis
+#
+# 用法：
+#   1. .env 里准备 DEEPSEEK_API_KEY / TAVILY_API_KEY / OPENAI_API_KEY
+#   2. docker compose up -d --build
+#   3. http://localhost:8000/docs 看 API；前端另起：cd frontend && npm run dev
+#
+# 生产部署（Nginx + HTTPS）见 deploy/docker-compose.prod.yml 与 deploy/DEPLOY.md
+
+name: anti-fraud-agent
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppass-dev}
+      POSTGRES_DB: antifraud
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d antifraud"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # 本机调试需要直连数据库时再打开：
+    # ports:
+    #   - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      # 国内网络打开下面两行：
+      # args:
+      #   HF_ENDPOINT: https://hf-mirror.com
+      #   PIP_INDEX: https://pypi.tuna.tsinghua.edu.cn/simple
+    env_file:
+      - .env                       # DEEPSEEK_API_KEY / TAVILY_API_KEY / OPENAI_API_KEY
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:${POSTGRES_PASSWORD:-apppass-dev}@db:5432/antifraud
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

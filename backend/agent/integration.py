@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re as _re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,12 @@ from typing import AsyncGenerator
 # ---------------------------------------------------------------------------
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+
+from ..services.cache import get_cached_tool, set_cached_tool  # noqa: E402
+
+# 只缓存确定性工具：检索（含一次 LLM query 改写）与规则评分。
+# web_search 不缓存（时效性），calculator/get_current_time 不值得缓存。
+_CACHEABLE_TOOLS = {"search_knowledge", "risk_score"}
 
 _REAL_AGENT_AVAILABLE = False
 try:
@@ -52,6 +59,60 @@ def _score_to_verdict(score: int | None) -> tuple[str, float]:
     return "safe", 0.85
 
 
+# Web-only formatting instructions appended to system prompt.
+# Does NOT modify the original SYSTEM_PROMPT in memory.py.
+_WEB_FORMAT_SUFFIX = """
+
+【输出格式】
+完成工具调用后，你的最终回复必须包含以下三个段落标记，每个标记独占一行：
+
+【判断】
+（一两句话总结你的判断，保持你的说话风格）
+
+【建议】
+- （具体行动建议1）
+- （具体行动建议2）
+- （更多建议…）
+
+【依据】
+- （依据1，标注来源工具或机构名）
+- （依据2）
+- （更多依据…）
+
+三个段落缺一不可。不要输出其他段落标记。保持你原来的语气和说话方式。
+"""
+
+
+def _parse_structured_reply(raw: str) -> dict:
+    """Parse 信噪's structured reply into summary, advice, evidence."""
+    summary = raw
+    advice: list[str] = []
+    evidence: list[dict] = []
+
+    # Extract 【判断】section
+    m = _re.search(r'【判断】\s*\n?(.*?)(?=【建议】|【依据】|$)', raw, _re.DOTALL)
+    if m:
+        summary = m.group(1).strip()
+
+    # Extract 【建议】section
+    m = _re.search(r'【建议】\s*\n?(.*?)(?=【依据】|$)', raw, _re.DOTALL)
+    if m:
+        for line in m.group(1).strip().splitlines():
+            line = _re.sub(r'^[\-\*·•\d.、]+\s*', '', line.strip())
+            if line:
+                advice.append(line)
+
+    # Extract 【依据】section
+    m = _re.search(r'【依据】\s*\n?(.*?)$', raw, _re.DOTALL)
+    if m:
+        for line in m.group(1).strip().splitlines():
+            line = _re.sub(r'^[\-\*·•\d.、]+\s*', '', line.strip())
+            if line:
+                evidence.append({"source": "agent", "finding": line})
+
+    return {"summary": summary, "advice": advice, "evidence": evidence}
+
+
 def _parse_tool_result(raw: str) -> dict:
     """Try to parse a tool result string as JSON, fallback to {raw: ...}."""
     try:
@@ -81,6 +142,7 @@ def _summarize(name: str, output: dict) -> str:
 
 async def run_real_agent(
     message: str, message_type: str,
+    history: list[dict] | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Run the real 信噪 ReAct agent, yielding step + result messages."""
 
@@ -96,11 +158,16 @@ async def run_real_agent(
         }
         return
 
-    # Fresh conversation (no history carry-over for web sessions)
-    messages: list[dict] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": message},
-    ]
+    # Build conversation with history for context continuity
+    web_prompt = SYSTEM_PROMPT + _WEB_FORMAT_SUFFIX
+    messages: list[dict] = [{"role": "system", "content": web_prompt}]
+
+    # Inject previous conversation turns (keep last 10 turns max to control tokens)
+    if history:
+        for turn in history[-10:]:
+            messages.append({"role": turn["role"], "content": turn["content"]})
+
+    messages.append({"role": "user", "content": message})
 
     client = get_client()
     step_number = 0
@@ -125,7 +192,7 @@ async def run_real_agent(
 
         # ---- No tool calls → final reply ----
         if not msg.tool_calls:
-            reply = clean_reply(msg.content)
+            reply = msg.content or ""  # keep newlines for section parsing
             break
 
         thought = msg.content or ""
@@ -134,9 +201,23 @@ async def run_real_agent(
         # ---- Process each tool call ----
         for tc in msg.tool_calls:
             name = tc.function.name
+            cache_hit = False
             try:
                 args = json.loads(tc.function.arguments) if tc.function.arguments else {}
-                raw_result = await asyncio.to_thread(tool_map[name], args)
+                cache_payload = (
+                    json.dumps(args, ensure_ascii=False, sort_keys=True)
+                    if name in _CACHEABLE_TOOLS else None
+                )
+                raw_result: str | None = None
+                if cache_payload is not None:
+                    cached = await get_cached_tool(name, cache_payload)
+                    if cached is not None:
+                        raw_result = cached
+                        cache_hit = True
+                if raw_result is None:
+                    raw_result = await asyncio.to_thread(tool_map[name], args)
+                    if cache_payload is not None and isinstance(raw_result, str):
+                        await set_cached_tool(name, cache_payload, raw_result)
             except Exception as e:
                 raw_result = f"工具执行出错：{e}"
 
@@ -157,6 +238,7 @@ async def run_real_agent(
                 "tool_name": name,
                 "tool_input": args,
                 "tool_output": tool_output,
+                "cached": cache_hit,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             thought = ""  # only first tool call of each round carries the thought
@@ -170,27 +252,50 @@ async def run_real_agent(
         reply = "想了半天没想明白 你换个方式问问"
 
     # ---- Build structured result ----
-    score = risk_result.get("score") if risk_result else None
-    verdict, confidence = _score_to_verdict(score)
+    # If no tools were called, this is a plain conversational reply — skip verdict/advice
+    if step_number == 0:
+        yield {
+            "type": "result",
+            "verdict": None,
+            "confidence": None,
+            "summary": clean_reply(reply),
+            "advice": [],
+            "evidence": [],
+        }
+        return
 
-    advice: list[str] = []
-    if risk_result and risk_result.get("suggested_action"):
-        # Split long suggested_action into sentences
+    # Tools were called — compute verdict from risk_score if available
+    score = risk_result.get("score") if risk_result else None
+    verdict: str | None = None
+    confidence: float | None = None
+    if score is not None:
+        verdict, confidence = _score_to_verdict(score)
+
+    # Try to parse 信噪's structured reply (【判断】/【建议】/【依据】)
+    parsed = _parse_structured_reply(reply)
+
+    # Use parsed sections; fall back to risk_score / tool-tracking data
+    summary = parsed["summary"] or clean_reply(reply)
+
+    advice: list[str] = parsed["advice"]
+    if not advice and risk_result and risk_result.get("suggested_action"):
+        # Fallback: extract from risk_score tool output
         action = risk_result["suggested_action"]
         for part in action.replace("。", "。\n").split("\n"):
             part = part.strip()
             if part:
                 advice.append(part)
-    if not advice:
-        advice = ["建议通过官方渠道核实相关信息"]
+    # No more generic fallback — if nothing to advise, leave empty
+
+    final_evidence = parsed["evidence"] if parsed["evidence"] else evidence
 
     yield {
         "type": "result",
         "verdict": verdict,
         "confidence": confidence,
-        "summary": reply,
+        "summary": summary,
         "advice": advice,
-        "evidence": evidence,
+        "evidence": final_evidence,
     }
 
 
@@ -248,6 +353,7 @@ MOCK_RESULT = {
 
 async def run_mock_agent(
     message: str, message_type: str,
+    history: list[dict] | None = None,
 ) -> AsyncGenerator[dict, None]:
     total_steps = len(MOCK_STEPS)
     for i, step in enumerate(MOCK_STEPS, 1):
@@ -272,12 +378,13 @@ async def run_mock_agent(
 
 async def run_agent(
     message: str, message_type: str,
+    history: list[dict] | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Public API — uses the real 信噪 agent if available, else mock."""
     gen = (
-        run_real_agent(message, message_type)
+        run_real_agent(message, message_type, history=history)
         if _REAL_AGENT_AVAILABLE
-        else run_mock_agent(message, message_type)
+        else run_mock_agent(message, message_type, history=history)
     )
     async for msg in gen:
         yield msg

@@ -3,9 +3,42 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
+# ── Auth ──
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    display_name: str = ""
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: "UserInfo"
+
+
+class UserInfo(BaseModel):
+    user_id: int
+    username: str
+    display_name: str
+
+
+# ── Chat ──
+
+class ChatTurn(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
 class AnalyzeRequest(BaseModel):
     message: str
     message_type: str = "sms"  # sms | email | phone_transcript
+    history: list[ChatTurn] = []  # previous conversation turns for context
 
 
 class AnalyzeResponse(BaseModel):
@@ -26,8 +59,8 @@ class StepMessage(BaseModel):
 
 class ResultMessage(BaseModel):
     type: str = "result"
-    verdict: str
-    confidence: float
+    verdict: str | None = None
+    confidence: float | None = None
     summary: str
     advice: list[str]
     evidence: list[dict]
@@ -58,5 +91,6 @@ class SessionDetail(BaseModel):
     confidence: float | None
     summary: str | None
     advice: list[str]
+    evidence: list[dict] = []
     steps: list[StepMessage]
     created_at: str

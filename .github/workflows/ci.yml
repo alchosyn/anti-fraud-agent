@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-tests:
+    name: Backend (FastAPI + ORM + Redis)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # 只装后端依赖：agent 重依赖缺席时 integration 自动降级 mock，
+      # 这条路径本身就是被测行为之一
+      - name: Install deps
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-asyncio fakeredis httpx
+      - name: Run backend tests
+        run: pytest -v
+
+  evals-offline-tests:
+    name: Evals offline (parser / metrics / sampling)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install CPU torch (避免 CUDA 全家桶)
+        run: pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install agent deps
+        run: pip install -r requirements.txt pytest
+      - name: Run offline eval tests (零 API 调用)
+        run: pytest tests/test_benchmark_public.py -v

@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .db.database import init_db
+from .db.database import dispose_engine, init_db
+from .services.redis_client import close_redis
 from .api.routes import router as api_router
 from .api.websocket import router as ws_router
 
@@ -12,9 +13,11 @@ from .api.websocket import router as ws_router
 async def lifespan(app: FastAPI):
     await init_db()
     yield
+    await close_redis()
+    await dispose_engine()
 
 
-app = FastAPI(title="反诈 Agent API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="反诈 Agent API", version="0.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,13 +1,14 @@
 import { useRef, useCallback } from 'react';
 import type { WSMessage } from '../types';
 
-export function useWebSocket() {
+export function useWebSocket(token: string | null) {
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(
     (sessionId: string, onMessage: (msg: WSMessage) => void) => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const url = `${protocol}//${window.location.host}/api/ws/${sessionId}`;
+      // Pass JWT via query param since WS doesn't support Authorization header
+      const url = `${protocol}//${window.location.host}/api/ws/${sessionId}?token=${encodeURIComponent(token ?? '')}`;
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
@@ -33,7 +34,7 @@ export function useWebSocket() {
         wsRef.current = null;
       };
     },
-    [],
+    [token],
   );
 
   const disconnect = useCallback(() => {
